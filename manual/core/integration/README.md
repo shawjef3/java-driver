@@ -457,7 +457,7 @@ If you don't use either of those features, you can safely exclude the dependency
 
 #### Esri
 
-Our [geospatial types](../dse/geotypes/) implementation is based on the [Esri Geometry
+The geospatial types implementation is based on the [Esri Geometry
 API](https://github.com/Esri/geometry-api-java).
 
 If you don't use geospatial types anywhere in your application, you can exclude the dependency:
@@ -478,7 +478,7 @@ If you don't use geospatial types anywhere in your application, you can exclude 
 
 #### TinkerPop
 
-[Apache TinkerPop™](http://tinkerpop.apache.org/) is used in our [graph API](../dse/graph/).
+[Apache TinkerPop™](http://tinkerpop.apache.org/) is used in the graph API.
 
 If you don't use DSE graph at all, you can exclude the dependencies:
 
@@ -496,10 +496,22 @@ If you don't use DSE graph at all, you can exclude the dependencies:
 </dependency>
 ```
 
-If you do use graph, it is important to keep the precise TinkerPop version that the driver depends
-on: unlike the driver, TinkerPop does not follow semantic versioning, so even a patch version change
-(e.g. 3.3.0 vs 3.3.3) could introduce incompatibilities. So do not declare an explicit dependency in
-your application, let the driver pull it transitively.
+Starting with driver 4.10 however, TinkerPop switched to an optional dependency. Excluding TinkerPop
+explicitly is not required anymore if you don't use it. _If you do use the graph API though, you now
+need to explicitly include the dependencies below in your application_:
+
+```xml
+<dependency>
+  <groupId>org.apache.tinkerpop</groupId>
+  <artifactId>gremlin-core</artifactId>
+  <version>${tinkerpop.version}</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.tinkerpop</groupId>
+  <artifactId>tinkergraph-gremlin</artifactId>
+  <version>${tinkerpop.version}</version>
+</dependency>
+```
 
 #### Reactive Streams
 
