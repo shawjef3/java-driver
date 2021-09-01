@@ -436,7 +436,6 @@ If all of these metrics are disabled, you can remove the dependency:
 
 [Jackson](https://github.com/FasterXML/jackson) is used:
 
-* when connecting to [Datastax Astra](../../cloud/);
 * when Insights monitoring is enabled;
 * when [Json codecs](../custom_codecs) are being used. 
  
