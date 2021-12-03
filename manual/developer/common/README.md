@@ -9,3 +9,13 @@ We then explain the two major approaches to deal with [concurrency](concurrency/
 
 Lastly, we briefly touch on the [event bus](event_bus/), which is used to decouple some of the
 internal components through asynchronous messaging.
+
+```eval_rst
+.. toctree::
+   :hidden:
+   :glob:
+   
+   concurrency/*
+   context/*
+   event_bus/*
+```

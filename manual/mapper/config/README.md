@@ -282,3 +282,14 @@ interface ProductDao {
 [gradle_kotlin]: https://kotlinlang.org/docs/reference/using-gradle.html
 [gradle_kapt]: https://kotlinlang.org/docs/reference/kapt.html#using-in-gradle
 [data classes]: https://kotlinlang.org/docs/reference/data-classes.html
+
+```eval_rst
+.. toctree::
+   :hidden:
+   :glob:
+   
+   kotlin/*
+   lombok/*
+   record/*
+   scala/*
+```
