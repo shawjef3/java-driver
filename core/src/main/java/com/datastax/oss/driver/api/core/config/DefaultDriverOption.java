@@ -808,6 +808,36 @@ public enum DefaultDriverOption implements DriverOption {
    * <p>Value-type: int
    */
   SESSION_LEAK_THRESHOLD("advanced.session-leak.threshold"),
+  /**
+   * The period of inactivity after which the node level metrics will be evicted. The eviction will
+   * happen only if none of the enabled node-level metrics is updated for a given node within this
+   * time window.
+   *
+   * <p>Value-type: {@link java.time.Duration Duration}
+   */
+  METRICS_NODE_EXPIRE_AFTER("advanced.metrics.node.expire-after"),
+
+  /**
+   * The classname of the desired MetricsFactory implementation.
+   *
+   * <p>Value-type: {@link String}
+   */
+  METRICS_FACTORY_CLASS("advanced.metrics.factory.class"),
+
+  /**
+   * The maximum number of nodes from remote DCs to include in query plans.
+   *
+   * <p>Value-Type: int
+   */
+  LOAD_BALANCING_DC_FAILOVER_MAX_NODES_PER_REMOTE_DC(
+      "advanced.load-balancing-policy.dc-failover.max-nodes-per-remote-dc"),
+  /**
+   * Whether to consider nodes from remote DCs if the request's consistency level is local.
+   *
+   * <p>Value-Type: boolean
+   */
+  LOAD_BALANCING_DC_FAILOVER_ALLOW_FOR_LOCAL_CONSISTENCY_LEVELS(
+      "advanced.load-balancing-policy.dc-failover.allow-for-local-consistency-levels"),
   ;
 
   private final String path;

@@ -701,6 +701,27 @@ public class TypedDriverOption<ValueT> {
       new TypedDriverOption<>(
           DseDriverOption.METRICS_NODE_GRAPH_MESSAGES_INTERVAL, GenericType.DURATION);
 
+  /** The time after which the node level metrics will be evicted. */
+  public static final TypedDriverOption<Duration> METRICS_NODE_EXPIRE_AFTER =
+      new TypedDriverOption<>(DefaultDriverOption.METRICS_NODE_EXPIRE_AFTER, GenericType.DURATION);
+
+  /** The classname of the desired MetricsFactory implementation. */
+  public static final TypedDriverOption<String> METRICS_FACTORY_CLASS =
+      new TypedDriverOption<>(DefaultDriverOption.METRICS_FACTORY_CLASS, GenericType.STRING);
+
+  /** The maximum number of nodes from remote DCs to include in query plans. */
+  public static final TypedDriverOption<Integer>
+      LOAD_BALANCING_DC_FAILOVER_MAX_NODES_PER_REMOTE_DC =
+          new TypedDriverOption<>(
+              DefaultDriverOption.LOAD_BALANCING_DC_FAILOVER_MAX_NODES_PER_REMOTE_DC,
+              GenericType.INTEGER);
+  /** Whether to consider nodes from remote DCs if the request's consistency level is local. */
+  public static final TypedDriverOption<Boolean>
+      LOAD_BALANCING_DC_FAILOVER_ALLOW_FOR_LOCAL_CONSISTENCY_LEVELS =
+          new TypedDriverOption<>(
+              DefaultDriverOption.LOAD_BALANCING_DC_FAILOVER_ALLOW_FOR_LOCAL_CONSISTENCY_LEVELS,
+              GenericType.BOOLEAN);
+
   private static Iterable<TypedDriverOption<?>> introspectBuiltInValues() {
     try {
       ImmutableList.Builder<TypedDriverOption<?>> result = ImmutableList.builder();

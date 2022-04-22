@@ -311,21 +311,6 @@ as `application.conf` and `logback.xml` in our previous examples, must be in the
 
 All the driver's artifacts are JPMS automatic modules.
 
-Note that TinkerPop cannot currently be used in a JPMS application. You will get the following
-error:
-
-```
-Error occurred during initialization of boot layer
-java.lang.module.FindException: Unable to derive module descriptor for /path/to/gremlin-shaded-3.4.5.jar
-Caused by: java.lang.module.InvalidModuleDescriptorException: Provider class com.fasterxml.jackson.core.JsonFactory not in module
-```
-
-This is a known issue that will be resolved in TinkerPop 3.4.7. The driver will upgrade as soon as
-possible, see [JAVA-2726](https://datastax-oss.atlassian.net/browse/JAVA-2726).
-
-Unfortunately, the only workaround in the meantime is to exclude TinkerPop dependencies, as
-explained [here](#tinker-pop). Graph functionality won't be available.
-
 ### Driver dependencies
 
 The driver depends on a number of third-party libraries; some of those dependencies are opt-in,
@@ -407,8 +392,10 @@ enable compression. See the [Compression](../compression/) page for more details
 The driver exposes [metrics](../metrics/) through the
 [Dropwizard](http://metrics.dropwizard.io/4.0.0/manual/index.html) library.
 
-The dependency is declared as required, but metrics are optional. If you've disabled all metrics,
-and never call [Session.getMetrics] anywhere in your application, you can remove the dependency:
+The dependency is declared as required, but metrics are optional. If you've disabled all metrics, or
+if you are using a [different metrics framework](../metrics/#changing-the-metrics-frameworks), and
+you never call [Session.getMetrics] anywhere in your application, then you can remove the
+dependency:
 
 ```xml
 <dependency>
@@ -450,7 +437,8 @@ If all of these metrics are disabled, you can remove the dependency:
 [Jackson](https://github.com/FasterXML/jackson) is used:
 
 * when connecting to [Datastax Astra](../../cloud/);
-* when Insights monitoring is enabled.
+* when Insights monitoring is enabled;
+* when [Json codecs](../custom_codecs) are being used. 
  
 If you don't use either of those features, you can safely exclude the dependency:
 
@@ -462,11 +450,7 @@ If you don't use either of those features, you can safely exclude the dependency
   <exclusions>
     <exclusion>
       <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-    </exclusion>
-    <exclusion>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <artifactId>*</artifactId>
     </exclusion>
   </exclusions>
 </dependency>
@@ -507,11 +491,7 @@ If you don't use DSE graph at all, you can exclude the dependencies:
   <exclusions>
     <exclusion>
       <groupId>org.apache.tinkerpop</groupId>
-      <artifactId>gremlin-core</artifactId>
-    </exclusion>
-    <exclusion>
-      <groupId>org.apache.tinkerpop</groupId>
-      <artifactId>tinkergraph-gremlin</artifactId>
+      <artifactId>*</artifactId>
     </exclusion>
   </exclusions>
 </dependency>
@@ -609,6 +589,6 @@ The remaining core driver dependencies are the only ones that are truly mandator
 [guava]: https://github.com/google/guava/issues/2721
 [annotation processing]: https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javac.html#sthref65
 
-[Session.getMetrics]:             https://docs.datastax.com/en/drivers/java/4.7/com/datastax/oss/driver/api/core/session/Session.html#getMetrics--
-[SessionBuilder.addContactPoint]: https://docs.datastax.com/en/drivers/java/4.7/com/datastax/oss/driver/api/core/session/SessionBuilder.html#addContactPoint-java.net.InetSocketAddress-
-[Uuids]:                          https://docs.datastax.com/en/drivers/java/4.7/com/datastax/oss/driver/api/core/uuid/Uuids.html
+[Session.getMetrics]:             https://docs.datastax.com/en/drivers/java/4.9/com/datastax/oss/driver/api/core/session/Session.html#getMetrics--
+[SessionBuilder.addContactPoint]: https://docs.datastax.com/en/drivers/java/4.9/com/datastax/oss/driver/api/core/session/SessionBuilder.html#addContactPoint-java.net.InetSocketAddress-
+[Uuids]:                          https://docs.datastax.com/en/drivers/java/4.9/com/datastax/oss/driver/api/core/uuid/Uuids.html

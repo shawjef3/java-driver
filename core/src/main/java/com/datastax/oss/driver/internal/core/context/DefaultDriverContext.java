@@ -77,12 +77,10 @@ import com.datastax.oss.driver.internal.core.metadata.token.DefaultReplicationSt
 import com.datastax.oss.driver.internal.core.metadata.token.DefaultTokenFactoryRegistry;
 import com.datastax.oss.driver.internal.core.metadata.token.ReplicationStrategyFactory;
 import com.datastax.oss.driver.internal.core.metadata.token.TokenFactoryRegistry;
-import com.datastax.oss.driver.internal.core.metrics.DropwizardMetricsFactory;
 import com.datastax.oss.driver.internal.core.metrics.MetricsFactory;
 import com.datastax.oss.driver.internal.core.pool.ChannelPoolFactory;
+import com.datastax.oss.driver.internal.core.protocol.BuiltInCompressors;
 import com.datastax.oss.driver.internal.core.protocol.ByteBufPrimitiveCodec;
-import com.datastax.oss.driver.internal.core.protocol.Lz4Compressor;
-import com.datastax.oss.driver.internal.core.protocol.SnappyCompressor;
 import com.datastax.oss.driver.internal.core.servererrors.DefaultWriteTypeRegistry;
 import com.datastax.oss.driver.internal.core.servererrors.WriteTypeRegistry;
 import com.datastax.oss.driver.internal.core.session.PoolManager;
@@ -99,8 +97,10 @@ import com.datastax.oss.driver.internal.core.util.concurrent.CycleDetector;
 import com.datastax.oss.driver.internal.core.util.concurrent.LazyReference;
 import com.datastax.oss.protocol.internal.Compressor;
 import com.datastax.oss.protocol.internal.FrameCodec;
+import com.datastax.oss.protocol.internal.PrimitiveCodec;
 import com.datastax.oss.protocol.internal.ProtocolV3ClientCodecs;
 import com.datastax.oss.protocol.internal.ProtocolV5ClientCodecs;
+import com.datastax.oss.protocol.internal.SegmentCodec;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.netty.buffer.ByteBuf;
@@ -165,8 +165,12 @@ public class DefaultDriverContext implements InternalDriverContext {
       new LazyReference<>("eventBus", this::buildEventBus, cycleDetector);
   private final LazyReference<Compressor<ByteBuf>> compressorRef =
       new LazyReference<>("compressor", this::buildCompressor, cycleDetector);
+  private final LazyReference<PrimitiveCodec<ByteBuf>> primitiveCodecRef =
+      new LazyReference<>("primitiveCodec", this::buildPrimitiveCodec, cycleDetector);
   private final LazyReference<FrameCodec<ByteBuf>> frameCodecRef =
       new LazyReference<>("frameCodec", this::buildFrameCodec, cycleDetector);
+  private final LazyReference<SegmentCodec<ByteBuf>> segmentCodecRef =
+      new LazyReference<>("segmentCodec", this::buildSegmentCodec, cycleDetector);
   private final LazyReference<ProtocolVersionRegistry> protocolVersionRegistryRef =
       new LazyReference<>(
           "protocolVersionRegistry", this::buildProtocolVersionRegistry, cycleDetector);
@@ -236,6 +240,7 @@ public class DefaultDriverContext implements InternalDriverContext {
   private final UUID startupClientId;
   private final String startupApplicationName;
   private final String startupApplicationVersion;
+  private final Object metricRegistry;
   // A stack trace captured in the constructor. Used to extract information about the client
   // application.
   private final StackTraceElement[] initStackTrace;
@@ -251,8 +256,7 @@ public class DefaultDriverContext implements InternalDriverContext {
       this.sessionName = "s" + SESSION_NAME_COUNTER.getAndIncrement();
     }
     this.localDatacentersFromBuilder = programmaticArguments.getLocalDatacenters();
-    this.codecRegistry =
-        buildCodecRegistry(this.sessionName, programmaticArguments.getTypeCodecs());
+    this.codecRegistry = buildCodecRegistry(programmaticArguments);
     this.nodeStateListenerFromBuilder = programmaticArguments.getNodeStateListener();
     this.nodeStateListenerRef =
         new LazyReference<>(
@@ -294,6 +298,7 @@ public class DefaultDriverContext implements InternalDriverContext {
       stackTrace = new StackTraceElement[] {};
     }
     this.initStackTrace = stackTrace;
+    this.metricRegistry = programmaticArguments.getMetricRegistry();
   }
 
   /**
@@ -424,30 +429,26 @@ public class DefaultDriverContext implements InternalDriverContext {
     DriverExecutionProfile defaultProfile = getConfig().getDefaultProfile();
     String name = defaultProfile.getString(DefaultDriverOption.PROTOCOL_COMPRESSION, "none");
     assert name != null : "should use default value";
-    switch (name.toLowerCase()) {
-      case "lz4":
-        return new Lz4Compressor(this);
-      case "snappy":
-        return new SnappyCompressor(this);
-      case "none":
-        return Compressor.none();
-      default:
-        throw new IllegalArgumentException(
-            String.format(
-                "Unsupported compression algorithm '%s' (from configuration option %s)",
-                name, DefaultDriverOption.PROTOCOL_COMPRESSION.getPath()));
-    }
+    return BuiltInCompressors.newInstance(name, this);
+  }
+
+  protected PrimitiveCodec<ByteBuf> buildPrimitiveCodec() {
+    return new ByteBufPrimitiveCodec(getNettyOptions().allocator());
   }
 
   protected FrameCodec<ByteBuf> buildFrameCodec() {
     return new FrameCodec<>(
-        new ByteBufPrimitiveCodec(getNettyOptions().allocator()),
+        getPrimitiveCodec(),
         getCompressor(),
         new ProtocolV3ClientCodecs(),
         new ProtocolV4ClientCodecsForDse(),
         new ProtocolV5ClientCodecs(),
         new DseProtocolV1ClientCodecs(),
         new DseProtocolV2ClientCodecs());
+  }
+
+  protected SegmentCodec<ByteBuf> buildSegmentCodec() {
+    return new SegmentCodec<>(getPrimitiveCodec(), getCompressor());
   }
 
   protected ProtocolVersionRegistry buildProtocolVersionRegistry() {
@@ -563,9 +564,12 @@ public class DefaultDriverContext implements InternalDriverContext {
     return new RequestProcessorRegistry(logPrefix, processors.toArray(new RequestProcessor[0]));
   }
 
-  protected CodecRegistry buildCodecRegistry(String logPrefix, List<TypeCodec<?>> codecs) {
-    MutableCodecRegistry registry = new DefaultCodecRegistry(logPrefix);
-    registry.register(codecs);
+  protected CodecRegistry buildCodecRegistry(ProgrammaticArguments arguments) {
+    MutableCodecRegistry registry = arguments.getCodecRegistry();
+    if (registry == null) {
+      registry = new DefaultCodecRegistry(this.sessionName);
+    }
+    registry.register(arguments.getTypeCodecs());
     registry.register(DseTypeCodecs.DATE_RANGE);
     if (DependencyCheck.ESRI.isPresent()) {
       registry.register(DseTypeCodecs.LINE_STRING, DseTypeCodecs.POINT, DseTypeCodecs.POLYGON);
@@ -598,7 +602,19 @@ public class DefaultDriverContext implements InternalDriverContext {
   }
 
   protected MetricsFactory buildMetricsFactory() {
-    return new DropwizardMetricsFactory(this);
+    return Reflection.buildFromConfig(
+            this,
+            DefaultDriverOption.METRICS_FACTORY_CLASS,
+            MetricsFactory.class,
+            "com.datastax.oss.driver.internal.core.metrics",
+            "com.datastax.oss.driver.internal.metrics.microprofile",
+            "com.datastax.oss.driver.internal.metrics.micrometer")
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    String.format(
+                        "Missing metrics factory, check your config (%s)",
+                        DefaultDriverOption.METRICS_FACTORY_CLASS)));
   }
 
   protected RequestThrottler buildRequestThrottler() {
@@ -781,8 +797,20 @@ public class DefaultDriverContext implements InternalDriverContext {
 
   @NonNull
   @Override
+  public PrimitiveCodec<ByteBuf> getPrimitiveCodec() {
+    return primitiveCodecRef.get();
+  }
+
+  @NonNull
+  @Override
   public FrameCodec<ByteBuf> getFrameCodec() {
     return frameCodecRef.get();
+  }
+
+  @NonNull
+  @Override
+  public SegmentCodec<ByteBuf> getSegmentCodec() {
+    return segmentCodecRef.get();
   }
 
   @NonNull
@@ -973,5 +1001,11 @@ public class DefaultDriverContext implements InternalDriverContext {
   @Override
   public List<LifecycleListener> getLifecycleListeners() {
     return lifecycleListenersRef.get();
+  }
+
+  @Nullable
+  @Override
+  public Object getMetricRegistry() {
+    return metricRegistry;
   }
 }
