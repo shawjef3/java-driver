@@ -459,7 +459,7 @@ changelog](https://docs.datastax.com/en/developer/java-driver-dse/latest/changel
 - [new feature] JAVA-1495: Add prepared statements
 
 
-## 3.8.0
+### 3.8.0
 
 - [new feature] JAVA-2356: Support for DataStax Cloud API.
 - [improvement] JAVA-2483: Allow to provide secure bundle via URL.
