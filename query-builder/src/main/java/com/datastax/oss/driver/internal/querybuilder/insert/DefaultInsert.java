@@ -88,9 +88,6 @@ public class DefaultInsert implements InsertInto, RegularInsert, JsonInsert {
     this.assignments = assignments;
     this.timestamp = timestamp;
     this.ttlInSeconds = ttlInSeconds;
-    Preconditions.checkArgument(
-        timeout == null || timeout instanceof CqlDuration || timeout instanceof BindMarker,
-        "Timeout value must be a BindMarker or CqlDuration");
     UsingTimeout.checkTimeout(timeout);
     this.timeout = timeout;
     this.ifNotExists = ifNotExists;
