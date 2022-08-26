@@ -365,15 +365,7 @@ public final class CqlDuration implements TemporalAmount {
     }
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(days, months, nanoseconds);
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-
+  public void appendTo(@NonNull final StringBuilder builder) {
     if (months < 0 || days < 0 || nanoseconds < 0) {
       builder.append('-');
     }
@@ -390,6 +382,17 @@ public final class CqlDuration implements TemporalAmount {
       remainder = append(builder, remainder, NANOS_PER_MICRO, "us");
       append(builder, remainder, 1, "ns");
     }
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(days, months, nanoseconds);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    appendTo(builder);
     return builder.toString();
   }
 

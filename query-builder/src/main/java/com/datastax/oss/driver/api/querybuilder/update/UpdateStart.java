@@ -16,13 +16,14 @@
 package com.datastax.oss.driver.api.querybuilder.update;
 
 import com.datastax.oss.driver.api.querybuilder.BindMarker;
+import com.datastax.oss.driver.api.querybuilder.UsingTimeout;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * The beginning of an UPDATE statement. It needs at least one assignment before the WHERE clause
  * can be added.
  */
-public interface UpdateStart extends OngoingAssignment {
+public interface UpdateStart extends OngoingAssignment, UsingTimeout<UpdateStart> {
 
   /**
    * Adds a USING TIMESTAMP clause to this statement with a literal value.

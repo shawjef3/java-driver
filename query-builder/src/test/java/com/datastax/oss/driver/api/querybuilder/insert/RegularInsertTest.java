@@ -16,9 +16,7 @@
 package com.datastax.oss.driver.api.querybuilder.insert;
 
 import static com.datastax.oss.driver.api.querybuilder.Assertions.assertThat;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.literal;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.*;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 import com.datastax.oss.driver.api.querybuilder.term.Term;
@@ -130,7 +128,8 @@ public class RegularInsertTest {
                     defaultInsert.getMissingJsonBehavior(),
                     defaultInsert.getAssignments(),
                     defaultInsert.getTimestamp(),
-                    new Object(), // invalid TTL object
+                    new Object(), // invalid TTL object,
+                    defaultInsert.getTimeout(),
                     defaultInsert.isIfNotExists()));
 
     assertThat(t)
@@ -154,6 +153,7 @@ public class RegularInsertTest {
                     defaultInsert.getAssignments(),
                     new Object(), // invalid timestamp object)
                     defaultInsert.getTtlInSeconds(),
+                    defaultInsert.getTimeout(),
                     defaultInsert.isIfNotExists()));
     assertThat(t)
         .isInstanceOf(IllegalArgumentException.class)

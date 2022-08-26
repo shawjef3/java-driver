@@ -20,6 +20,7 @@ import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder;
 import com.datastax.oss.driver.api.querybuilder.BindMarker;
 import com.datastax.oss.driver.api.querybuilder.BuildableQuery;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
+import com.datastax.oss.driver.api.querybuilder.UsingTimeout;
 import com.datastax.oss.driver.api.querybuilder.relation.OngoingWhereClause;
 import com.datastax.oss.driver.internal.core.CqlIdentifiers;
 import com.datastax.oss.driver.shaded.guava.common.collect.Iterables;
@@ -34,7 +35,8 @@ import java.util.Map;
  * <p>It knows about the table and at least one selector, and is therefore buildable. Additional
  * selectors and clauses can still be added before building.
  */
-public interface Select extends OngoingSelection, OngoingWhereClause<Select>, BuildableQuery {
+public interface Select
+    extends OngoingSelection, OngoingWhereClause<Select>, BuildableQuery, UsingTimeout<Select> {
 
   /**
    * Adds the provided GROUP BY clauses to the query.
@@ -193,4 +195,7 @@ public interface Select extends OngoingSelection, OngoingWhereClause<Select>, Bu
    */
   @NonNull
   Select allowFiltering();
+
+  @NonNull
+  Select bypassCache();
 }

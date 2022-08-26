@@ -17,11 +17,12 @@ package com.datastax.oss.driver.api.querybuilder.insert;
 
 import com.datastax.oss.driver.api.querybuilder.BindMarker;
 import com.datastax.oss.driver.api.querybuilder.BuildableQuery;
+import com.datastax.oss.driver.api.querybuilder.UsingTimeout;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 /** A complete INSERT statement that is ready to be built. */
-public interface Insert extends BuildableQuery {
+public interface Insert extends BuildableQuery, UsingTimeout<Insert> {
 
   /** Adds an IF NOT EXISTS clause to this statement. */
   @NonNull
